@@ -50,7 +50,7 @@ const registerLimiter = rateLimit({
 
 eventRouter.get('/', async (req, res) => {
     try {
-        const events = await eventModel.find({ user: req.user._id }).populate('user', 'email phone image activity role');
+        const events = await eventModel.find({ user: req.user._id }).populate('user', 'email phone activity role');
         return res.status(200).send(events);
     } catch (err) {
         return res.status(500).json({ message: 'Internal server error' });
@@ -142,7 +142,7 @@ eventRouter.delete('/:id', async (req, res) => {
 
 eventRouter.get('/all', async (req, res) => {
     try {
-        const events = await eventModel.find({ user: { $ne: req.user._id } }).populate('user', 'email phone image activity role');
+        const events = await eventModel.find({ user: { $ne: req.user._id } }).populate('user', 'email phone activity role');
         return res.status(200).send(events);
     } catch (err) {
         return res.status(500).json({ message: 'Internal server error' });
