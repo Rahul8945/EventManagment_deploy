@@ -1,16 +1,16 @@
 const { Router } = require('express');
 const rateLimit = require('express-rate-limit');
-const { auth } = require('../middleware/auth');
 const eventModel = require('../models/eventModel');
+const auth = require('../middleware/auth');
 const eventRouter = Router();
-eventRouter.use(auth);
+eventRouter.use(auth); 
 
 // Rate Limiter: Limits registration to once per day per user
 const registerLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000, // 24 hours
-    max: 1, // limit each IP to 1 request per windowMs
+    max: 1, // limit each user to 1 request per day
     message: "You can only register for an event once per day",
-    keyGenerator: (req) => req.user._id.toString() // use user ID as key
+    keyGenerator: (req) => req.user._id.toString() // Use user ID as the key
 });
 
 /**
@@ -47,7 +47,6 @@ const registerLimiter = rateLimit({
  *       500:
  *         description: Internal server error
  */
-
 eventRouter.get('/', async (req, res) => {
     try {
         const events = await eventModel.find({ user: req.user._id }).populate('user', 'email phone activity role');
@@ -75,7 +74,6 @@ eventRouter.get('/', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-
 eventRouter.post('/', async (req, res) => {
     const { eventName, price, capacity } = req.body;
     try {
@@ -83,7 +81,8 @@ eventRouter.post('/', async (req, res) => {
             eventName,
             price,
             capacity,
-            user: req.user._id
+            user: req.user._id,
+            registeredUsers: [] // Initialize registeredUsers array
         });
         return res.status(201).send(event);
     } catch (err) {
@@ -112,7 +111,6 @@ eventRouter.post('/', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-
 eventRouter.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -139,7 +137,6 @@ eventRouter.delete('/:id', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-
 eventRouter.get('/all', async (req, res) => {
     try {
         const events = await eventModel.find({ user: { $ne: req.user._id } }).populate('user', 'email phone activity role');
@@ -172,8 +169,7 @@ eventRouter.get('/all', async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-
-eventRouter.get('/register-event/:id', registerLimiter, async (req, res) => {
+eventRouter.post('/register-event/:id', registerLimiter, async (req, res) => {
     const { id } = req.params;
     try {
         const event = await eventModel.findById(id);
@@ -192,7 +188,7 @@ eventRouter.get('/register-event/:id', registerLimiter, async (req, res) => {
         await event.save();
 
         const registeredEvents = await eventModel.find({ registeredUsers: req.user._id })
-            .populate('user', 'email phone image activity role');
+            .populate('user', 'email phone activity role');
         return res.status(200).json(registeredEvents);
     } catch (err) {
         console.error('Error registering for event:', err);

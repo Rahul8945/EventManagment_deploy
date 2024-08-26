@@ -8,59 +8,36 @@ const secret_key=process.env.SECRET_KEY
 const blackList = new Set();
 
 // Middleware function
-const auth = async (req, res, next) => {
-    const header = req.headers.authorization;
+const auth=async(req,res,next)=>{
+    const header=req.headers.authorization
     
-    // Check if authorization header is present
-    if (!header) {
-        return res.status(400).json({ message: 'Invalid headers' });
-    }
+    console.log('Authorization Header in Middleware:', header);
     
-    const token = header.split(' ')[1];
-    
-    // Check if token exists
-    if (!token) {
-        return res.status(400).json({ message: 'Invalid token' });
-    }
-    
-    // Check if token is blacklisted
-    if (blackList.has(token)) {
-        return res.status(400).json({ message: 'This token is blacklisted' });
-    }
-    
-    try {
-        // Verify JWT token
-        const decoded = jwt.verify(token, secret_key);
+    if(!header|| !header.startsWith("Bearer ")){
+        return res.status(400).json({message:'Invalid headers'})
         
-        // Check if token is valid
-        if (!decoded) {
-            return res.status(400).json({ message: 'An error occurred while verifying token' });
+    }
+    const token=header.split(' ')[1]
+    console.log(token)
+    if(!token){
+        return res.status(400).json({message:'Invalid token'})
+    }
+    if(blackList.has(token)){
+        return res.status(400).json({message:'this token is blacklisted'})
+    }
+    try{
+        const decode=jwt.verify(token,secret_key)
+        if(!decode){
+            return res.status(400).json({message:'An error occurred while verifying token'})
         }
-        
-        // Attach user to the request object
-        req.user = await userModel.findOne({ email: decoded.email });
-        
-        // Check if user exists
-        if (!req.user) {
-            return res.status(400).json({ message: 'Unauthorized access' });
+        req.user=await userModel.findOne({email:decode.email})
+        if(!req.user){
+            return res.status(400).json({message:'Unauthorized access'})
         }
-        
-        // Proceed to the next middleware
-        next();
-    } catch (err) {
-        // Handle token expiration error
-        if (err.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Token has expired, please login again' });
-        }
-        
-        // Handle any other internal server error
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-};
+        next()
+    }catch(err){
+        return res.status(500).json({message:'Internal server error'})
 
-// Function to add a token to the blacklist
-const blacklistToken = (token) => {
-    blackList.add(token);
-};
-
-module.exports = { auth, blacklistToken };
+    }
+}
+module.exports=auth

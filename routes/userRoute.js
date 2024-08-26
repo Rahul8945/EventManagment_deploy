@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
 const eventModel = require('../models/eventModel');
-const { auth } = require('../middleware/auth');
+const auth = require('../middleware/auth');
+
 
 const userRouter = Router();
 dotenv.config();

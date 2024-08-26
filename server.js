@@ -3,20 +3,23 @@ const dotenv=require('dotenv');
 const connectDB = require('./configs/db');
 const userRouter = require('./routes/userRoute');
 const eventRouter = require('./routes/eventRoute');
-const { auth } = require('./middleware/auth');
+const cors = require("cors");
+const swaggerUi = require('swagger-ui-express');
+ const swaggerSpec=require('./swagger/swagger');
 
+
+dotenv.config()
 const app=express();
 app.use(express.json());
-dotenv.config()
-
-const cors = require("cors");
 app.use(cors());
-const swaggerUi = require('swagger-ui-express');
- const swaggerSpec=require('./swagger/swagger')
+
+const auth = require('./middleware/auth');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/',(req,res)=>{
     res.send("this is home route")
+    
+    
 })
 app.use('/user',userRouter)
 app.use('/userEvent',auth,eventRouter)
